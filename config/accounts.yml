@@ -1,0 +1,115 @@
+# 账号池配置模板
+#
+# 三条纪律：
+# 1. 本文件**不放真实凭据**，只写环境变量名（形如 env:TRAE_TOKEN_1），
+#    真实值放在工作机的系统环境变量或 .env 里，由启动脚本注入。
+# 2. 组内顺序 = 优先级：index 0 最先启用，额度耗尽后自动下移到下一个。
+# 3. 同一时刻每组只有一个账号在线，其余账号不拉起进程、不登录、不发请求；
+#    这是为了降低平台风控识别概率，请勿改成并行。
+
+config_version: "2025-01-01"
+
+groups:
+  # ---------------------------------------------------------------- Trae
+  trae_group:
+    # 可选：覆盖默认命令；不写则用内置默认 `traecli mcp-server`
+    # cli: ["traecli", "mcp-server"]
+    accounts:
+      - label: trae-a # 主用账号
+        env:
+          TRAE_TOKEN: env:TRAE_TOKEN_1
+          TRAE_PROFILE: env:TRAE_PROFILE_1 # 可选：profile 目录，多账号隔离用
+        notes: "主用；额度耗尽后自动切 B"
+      - label: trae-b # 备用账号（休眠待命）
+        env:
+          TRAE_TOKEN: env:TRAE_TOKEN_2
+          TRAE_PROFILE: env:TRAE_PROFILE_2
+        notes: "备用；不主动拉起"
+      - label: trae-c
+        env:
+          TRAE_TOKEN: env:TRAE_TOKEN_3
+        notes: "第三备"
+
+  # ---------------------------------------------------------------- Qoder
+  qoder_group:
+    # cli: ["qoder", "mcp", "serve"]
+    accounts:
+      - label: qoder-a
+        env:
+          QODER_TOKEN: env:QODER_TOKEN_1
+      - label: qoder-b
+        env:
+          QODER_TOKEN: env:QODER_TOKEN_2
+
+  # ---------------------------------------------------------------- WorkBuddy
+  workbuddy_group:
+    # cli: ["workbuddy-mcp"]
+    accounts:
+      - label: wb-a
+        env:
+          WORKBUDDY_TOKEN: env:WORKBUDDY_TOKEN_1
+      - label: wb-b
+        env:
+          WORKBUDDY_TOKEN: env:WORKBUDDY_TOKEN_2
+        disabled: true # 示例：暂时下线，调度器不会选中
+        notes: "等新额度到账后把 disabled 改成 false 并 reload_config"
+
+  # ================================================================ API 分组
+  #
+  # 除了三家 CLI 的免费额度，也可以挂**任意 OpenAI 兼容 API**：
+  #   - 官方：OpenAI / DeepSeek / Moonshot(Kimi) / 智谱 GLM / 阿里 Qwen / MiniMax
+  #   - 聚合与中转：OpenRouter / one-api / new-api / FreeLLMAPI 之类网关
+  #   - 本地：vLLM / SGLang / LM Studio / Ollama 的 /v1 兼容层
+  #
+  # 三条纪律（与 CLI 组一致）：
+  #   1. 组内单实例：同一时刻只有一个 key 在跑，其余休眠；
+  #   2. 凭据只写 env:变量名，真实 key 放系统环境变量；
+  #   3. daily_budget 是硬护栏：超了当天直接拒单（POOL_EXHAUSTED）。
+
+  # ---------------------------------------------------------------- 示例 A：付费 API（有预算护栏）
+  # 实际使用时删除注释即可启用。
+  # deepseek_group:
+  #   kind: api
+  #   api:
+  #     protocol: openai                       # 一期只支持 openai 兼容
+  #     base_url: https://api.deepseek.com/v1  # 任意家的 base_url
+  #     model: deepseek-chat                   # 分组默认模型
+  #     max_output_tokens: 4096
+  #     temperature: 0.3
+  #     request_timeout_s: 300
+  #     daily_budget: 20                       # 日预算（元）；0=不限额
+  #     input_price_per_mtok: 1.0              # 每百万输入 token 价格（元），用于估算花费
+  #     output_price_per_mtok: 2.0
+  #     # extra_headers:                       # 部分中转站需要
+  #     #   X-Title: Native-CLI-Orchestrator
+  #   accounts:
+  #     - label: ds-a
+  #       env:
+  #         OPENAI_API_KEY: env:DEEPSEEK_KEY_1
+  #     - label: ds-b                          # 备用 key，额度耗尽自动切
+  #       env:
+  #         OPENAI_API_KEY: env:DEEPSEEK_KEY_2
+
+  # ---------------------------------------------------------------- 示例 B：免费网关（不限预算）
+  # freellm_group:
+  #   kind: api
+  #   api:
+  #     base_url: https://your-free-gateway/v1
+  #     model: gpt-4o-mini
+  #     daily_budget: 0                        # 0 = 不限额（免费额度无需护栏）
+  #   accounts:
+  #     - label: free-a
+  #       env:
+  #         API_KEY: env:FREELLM_KEY_1
+
+  # ---------------------------------------------------------------- 示例 C：本地模型
+  # local_group:
+  #   kind: api
+  #   api:
+  #     base_url: http://127.0.0.1:11434/v1    # Ollama
+  #     model: qwen2.5:14b
+  #     daily_budget: 0
+  #   accounts:
+  #     - label: local-a
+  #       env:
+  #         API_KEY: env:LOCAL_DUMMY_KEY        # 本地通常不校验，但要有个值

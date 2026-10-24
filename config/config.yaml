@@ -1,0 +1,37 @@
+mode: mock # mock（开发机默认）/ real（工作机）
+
+transport: sse # sse（主推）/ stdio
+
+# 账号池配置：分组、账号顺序、凭据环境变量名
+accounts_path: config/accounts.yml
+# 每个任务一个工作目录（inbox / manifest / .DONE 协议）
+workspace_root: workspace
+# 上游更新的备份目录
+backup_root: backups
+# 日志目录；置空则不落文件
+log_dir: logs
+
+server:
+  host: 127.0.0.1 # 局域网访问改 0.0.0.0，并设置 auth_token
+  port: 8770
+  sse_path: /sse
+  message_path: /messages/
+  auth_token: ""
+  log_level: INFO
+
+runner:
+  default_timeout_s: 900 # 单次尝试超时
+  max_account_attempts: 3 # 同一任务最多换几个账号
+  poll_interval_s: 0.5
+  group_cooldown_s: 2 # 同组两次任务最小间隔（风控）
+  switch_cooldown_s: 5 # 切换账号后的冷静期
+  failure_threshold: 2 # 连续失败多少次判该账号 FAILED
+  output_tail_lines: 500
+
+upstream:
+  enabled: true # 上游更新属可选能力
+  repo: "" # 例：https://github.com/your-org/xxx-cli.git 或本地路径
+  ref: main
+  paths: [] # 需要同步的子路径；空=整仓
+  keep_backups: 5
+  verify_after_update: true

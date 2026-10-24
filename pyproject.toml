@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "native-cli-orchestrator"
+version = "0.1.0"
+description = "三家 CLI（Trae / Qoder / WorkBuddy）账号池聚合调度 MCP 服务"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+dependencies = [
+  "mcp>=2.3,<3",
+  "pydantic>=2.7,<3",
+  "PyYAML>=6.0",
+  # API 分组（kind: api）用的 HTTP 客户端；mcp 已把 httpx2 作为传递依赖，
+  # 这里显式声明，避免上游换依赖时静默坏掉。
+  "httpx2>=2.10",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "anyio>=4.0", "ruff>=0.6", "mypy>=1.10", "types-PyYAML"]
+build = ["pyinstaller>=6.0"]
+
+[project.scripts]
+nco-sse = "native_cli_orchestrator.entry.cli:run_sse"
+nco-stdio = "native_cli_orchestrator.entry.cli:run_stdio"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+native_cli_orchestrator = ["py.typed"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra --strict-markers"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF", "S", "BLE", "PYI"]
+ignore = [
+  "E501",
+  "RUF001", "RUF002", "RUF003", # 中文全角标点是有意为之
+  "S603", "S607",               # 子进程命令来自配置白名单，路径已解析
+  "S101",                       # 测试与内部断言
+]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_ignores = true
+files = ["src"]

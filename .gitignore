@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+*.spec
+
+# 运行期（不进交付包）
+logs/
+workspace/
+backups/
+probe-report/
+.pools.state.json
+config/config.local.yaml
+*.log
+
+# 临时与探测
+.ai-workspace-runtime/
+devtools/tmp/
+tmp/
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
